@@ -1,0 +1,36 @@
+version: '3.9'
+
+services:
+  db:
+    build:
+      context: ./database         
+      dockerfile: Dockerfile      
+    container_name: postgres_with_pgvector
+    environment:
+      POSTGRES_USER: ${TARGET_DB_USER}
+      POSTGRES_PASSWORD: ${TARGET_DB_PASSWORD}
+      POSTGRES_DB: ${TARGET_DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+  app:
+    build:
+      context: .
+      dockerfile: ./streamlit_app/Dockerfile
+    container_name: streamlit_app
+    environment:
+      TARGET_DB_HOST: db                       
+      TARGET_DB_USER: ${TARGET_DB_USER}        
+      TARGET_DB_PASSWORD: ${TARGET_DB_PASSWORD} 
+      TARGET_DB_NAME: ${TARGET_DB_NAME}        
+      OPENAI_API_KEY: ${OPENAI_API_KEY}        
+    ports:
+      - "8501:8501"
+    depends_on:
+      - db
+
+volumes:
+  db_data:
